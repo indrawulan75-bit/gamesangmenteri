@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sang Menteri: Misi Penyelamatan Kas Negara</title>
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          keyframes: {
+            shake: {
+              '0%, 100%': { transform: 'translateX(0)' },
+              '10%, 30%, 50%, 70%, 90%': { transform: 'translateX(-10px)' },
+              '20%, 40%, 60%, 80%': { transform: 'translateX(10px)' },
+            }
+          },
+          animation: {
+            shake: 'shake 0.5s ease-in-out',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome untuk Ikon -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- React & ReactDOM CDN -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  
+  <!-- Babel untuk transpile JSX di browser -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <style>
+    body { margin: 0; overflow: hidden; background-color: #0c0a09; }
+  </style>
+</head>
+<body>
+
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Komponen Pembantu untuk merender Ikon FontAwesome dengan mudah
+    const Icon = ({ name, size, className = "" }) => (
+      <i className={`${name} ${className}`} style={{ fontSize: size, width: size, height: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}></i>
+    );
+
+    // === DATABASE 20 MISI SEJARAH EKONOMI ===
+    const MISSIONS = [
+      {
+        id: 1, title: "KRISIS: HIPERINFLASI!",
+        desc: "Uang Jepang, NICA, dan De Javasche Bank beredar bersamaan! Nilai mata uang hancur dan pasar menjadi sangat kacau.",
+        icon: "fas fa-coins", bg: "bg-stone-200", border: "border-stone-400",
+        options: [
+          { text: "Meminta bantuan NICA", isCorrect: false },
+          { text: "Menerbitkan ORI", isCorrect: true, fact: "Tepat! Pada Oktober 1946, pemerintah menerbitkan ORI (Oeang Repoeblik Indonesia) sebagai simbol kedaulatan." },
+          { text: "Turunkan nilai uang Jepang", isCorrect: false }
+        ]
+      },
+      {
+        id: 2, title: "KRISIS: KAS NEGARA KOSONG!",
+        desc: "Pemerintah tidak punya dana untuk operasional negara dan biaya diplomasi kemerdekaan. Kita butuh dana cepat!",
+        icon: "fas fa-landmark", bg: "bg-amber-100", border: "border-amber-400",
+        options: [
+          { text: "Cetak uang terus menerus", isCorrect: false },
+          { text: "Lakukan Pinjaman Nasional", isCorrect: true, fact: "Benar! Ir. Surachman menginisiasi Pinjaman Nasional pada Juli 1946. Rakyat berbondong-bondong meminjamkan hartanya demi RI." },
+          { text: "Menyita harta rakyat", isCorrect: false }
+        ]
+      },
+      {
+        id: 3, title: "KRISIS: DISTRIBUSI UANG TERHAMBAT!",
+        desc: "Uang ORI tidak bisa menjangkau daerah-daerah terpencil akibat blokade militer Belanda. Ekonomi daerah lumpuh!",
+        icon: "fas fa-map-marked-alt", bg: "bg-orange-100", border: "border-orange-400",
+        options: [
+          { text: "Biarkan daerah kembali barter", isCorrect: false },
+          { text: "Pakai uang Jepang di daerah", isCorrect: false },
+          { text: "Menerbitkan ORIDA", isCorrect: true, fact: "Tepat! Pemerintah mengizinkan daerah menerbitkan ORI Daerah (ORIDA) agar transaksi lokal tetap hidup." }
+        ]
+      },
+      {
+        id: 4, title: "KRISIS: TIDAK ADA BANK PUSAT!",
+        desc: "De Javasche Bank masih dikuasai Belanda. Kita butuh bank nasional untuk mengatur peredaran uang kita sendiri.",
+        icon: "fas fa-building", bg: "bg-blue-100", border: "border-blue-400",
+        options: [
+          { text: "Mendirikan BNI 1946", isCorrect: true, fact: "Tepat! Pada 5 Juli 1946, pemerintah mendirikan Bank Negara Indonesia (BNI) sebagai bank sirkulasi dan bank sentral RI pertama." },
+          { text: "Membakar De Javasche Bank", isCorrect: false },
+          { text: "Menyerahkan ekonomi ke swasta", isCorrect: false }
+        ]
+      },
+      {
+        id: 5, title: "KRISIS: BLOKADE LAUT NICA!",
+        desc: "Belanda memblokade pelabuhan kita! Ekspor mati, pasokan senjata dan obat tertahan. Kita terkurung!",
+        icon: "fas fa-ship", bg: "bg-cyan-100", border: "border-cyan-400",
+        options: [
+          { text: "Kirim pasukan serang NICA", isCorrect: false },
+          { text: "Diplomasi Beras ke India", isCorrect: true, fact: "Cerdas! Mengirim 500.000 ton beras ke India membuat RI mendapat simpati dunia serta bantuan obat-obatan sebagai balasannya." },
+          { text: "Menutup pelabuhan total", isCorrect: false }
+        ]
+      },
+      {
+        id: 6, title: "KRISIS: KEKACAUAN HARGA!",
+        desc: "Distribusi barang tersendat, harga melambung tinggi dan berbeda-beda drastis antar satu daerah dengan daerah lain.",
+        icon: "fas fa-chart-line", bg: "bg-purple-100", border: "border-purple-400",
+        options: [
+          { text: "Hukum pancung penimbun", isCorrect: false },
+          { text: "Adakan Konferensi Ekonomi", isCorrect: true, fact: "Langkah brilian! Konferensi Ekonomi Nasional (1946) dipimpin Ir. Darmawan Mangunkusumo berhasil menyamakan harga pasar." },
+          { text: "Biarkan harga pasar bebas", isCorrect: false }
+        ]
+      },
+      {
+        id: 7, title: "KRISIS: SULITNYA EKSPOR-IMPOR!",
+        desc: "Belanda masih memonopoli jalur dagang internasional perusahaan-perusahaan swasta Indonesia.",
+        icon: "fas fa-briefcase", bg: "bg-indigo-100", border: "border-indigo-400",
+        options: [
+          { text: "Menyuap komandan Belanda", isCorrect: false },
+          { text: "Boikot seluruh kapal asing", isCorrect: false },
+          { text: "Membentuk BTC", isCorrect: true, fact: "Benar! Banking and Trading Corporation (BTC) dibentuk untuk mempusatkan dan mengkoordinasi ekspor-impor RI." }
+        ]
+      },
+      {
+        id: 8, title: "KRISIS: ISOLASI DIPLOMASI INTERNASIONAL",
+        desc: "Kita butuh jalur rahasia di luar negeri untuk berdagang, mencari senjata, dan menembus blokade informasi NICA.",
+        icon: "fas fa-globe", bg: "bg-teal-100", border: "border-teal-400",
+        options: [
+          { text: "Mendirikan INDOFF di Singapura", isCorrect: true, fact: "Tepat! Indonesia Office (INDOFF) di Singapura menjadi urat nadi perwakilan dagang dan diplomasi rahasia kita di luar negeri." },
+          { text: "Kirim surat ke PBB saja", isCorrect: false },
+          { text: "Menyerah pada blokade", isCorrect: false }
+        ]
+      },
+      {
+        id: 9, title: "KRISIS: PEMBANGUNAN TAK TERARAH!",
+        desc: "Infrastruktur hancur sisa perang. Belum ada cetak biru (blueprint) yang jelas untuk merekonstruksi ekonomi.",
+        icon: "fas fa-clipboard-list", bg: "bg-emerald-100", border: "border-emerald-400",
+        options: [
+          { text: "Fokus beli senjata saja", isCorrect: false },
+          { text: "Bentuk Badan Perancang Ekonomi", isCorrect: true, fact: "Tepat! Menteri A.K. Gani membentuk Planning Board pada 1947 untuk menyusun Rencana Pembangunan 10 Tahun." },
+          { text: "Bergantung utang asing", isCorrect: false }
+        ]
+      },
+      {
+        id: 10, title: "KRISIS: ASET JEPANG TERBENGKALAI",
+        desc: "Banyak pabrik dan perkebunan peninggalan Jepang yang direbut pemuda namun tidak dikelola dengan baik dan terancam rusak.",
+        icon: "fas fa-industry", bg: "bg-stone-300", border: "border-stone-500",
+        options: [
+          { text: "Mendirikan Badan Pengawas Harta Musuh", isCorrect: true, fact: "Benar! BPHM dibentuk untuk mengambil alih dan mengelola aset-aset sisa penjajahan agar menjadi modal negara." },
+          { text: "Membakar pabrik agar tak direbut Belanda", isCorrect: false },
+          { text: "Serahkan kembali ke Jepang", isCorrect: false }
+        ]
+      },
+      {
+        id: 11, title: "KRISIS: JALUR LOGISTIK DARAT PUTUS",
+        desc: "Distribusi beras dan logistik tempur terhambat karena manajemen kereta api dan jalan raya hancur.",
+        icon: "fas fa-train", bg: "bg-yellow-100", border: "border-yellow-400",
+        options: [
+          { text: "Pengambilalihan DKARI", isCorrect: true, fact: "Tepat! Pengambilalihan Djawatan Kereta Api Republik Indonesia (DKARI) menyelamatkan mobilitas pejuang dan barang pokok." },
+          { text: "Pakai gerobak sapi seluruhnya", isCorrect: false },
+          { text: "Minta NICA perbaiki jalan", isCorrect: false }
+        ]
+      },
+      {
+        id: 12, title: "KRISIS: EKONOMI RAKYAT KECIL LEMAH",
+        desc: "Pedagang kecil dan petani menderita karena modal dihisap rentenir. Mereka butuh wadah ekonomi kerakyatan.",
+        icon: "fas fa-users", bg: "bg-rose-100", border: "border-rose-400",
+        options: [
+          { text: "Bagikan uang tunai gratis", isCorrect: false },
+          { text: "Pajak tinggi untuk orang kaya", isCorrect: false },
+          { text: "Mendorong Koperasi (Ide Hatta)", isCorrect: true, fact: "Luar biasa! Bung Hatta menggalakkan Koperasi sebagai soko guru perekonomian untuk melindungi kaum ekonomi lemah." }
+        ]
+      },
+      {
+        id: 13, title: "KRISIS: KELANGKAAN SANDANG (PAKAIAN)",
+        desc: "Rakyat kekurangan pakaian. Banyak yang terpaksa memakai karung goni bekas makanan yang menyebabkan penyakit kulit.",
+        icon: "fas fa-tshirt", bg: "bg-fuchsia-100", border: "border-fuchsia-400",
+        options: [
+          { text: "Impor sutra dari Eropa", isCorrect: false },
+          { text: "Kampanye Menanam Kapas", isCorrect: true, fact: "Benar! Pemerintah mengkampanyekan swasembada pakaian dengan menyuruh rakyat menanam kapas dan belajar bertenun." },
+          { text: "Merampas gudang kain Belanda", isCorrect: false }
+        ]
+      },
+      {
+        id: 14, title: "KRISIS: BUTUH DUAN DAN SENJATA DARI AS",
+        desc: "Kita kekurangan dana untuk lobi diplomasi di Amerika Serikat agar diakui sebagai negara berdaulat merdeka.",
+        icon: "fas fa-handshake", bg: "bg-lime-100", border: "border-lime-400",
+        options: [
+          { text: "Mengemis bantuan internasional", isCorrect: false },
+          { text: "Menandatangani Kontrak Fox", isCorrect: true, fact: "Benar! Kontrak dagang rahasia dengan Matthew Fox (pengusaha AS) membantu RI mendapat dana, senjata, dan dukungan lobi di PBB." },
+          { text: "Gadaikan pulau ke negara lain", isCorrect: false }
+        ]
+      },
+      {
+        id: 15, title: "KRISIS: AGRESI MILITER BELANDA KE-2",
+        desc: "Ibu kota Yogyakarta jatuh! Para menteri ditangkap. Kita harus memindahkan pusat ekonomi untuk membiayai perang gerilya.",
+        icon: "fas fa-shield-alt", bg: "bg-red-200", border: "border-red-500",
+        options: [
+          { text: "Bentuk Ekonomi Pertahanan PDRI", isCorrect: true, fact: "Tepat! Menteri Kemakmuran PDRI di Sumatera membentuk ekonomi perlawanan darurat dari dalam hutan agar republik tetap eksis." },
+          { text: "Membatalkan kemerdekaan", isCorrect: false },
+          { text: "Kabur ke luar negeri", isCorrect: false }
+        ]
+      },
+      {
+        id: 16, title: "KRISIS: HASIL BUMI TERTAHAN BLOKADE",
+        desc: "Kita punya berton-ton karet dan gula, tapi NICA menembak kapal resmi kita. Hasil bumi ini harus diekspor jadi uang!",
+        icon: "fas fa-anchor", bg: "bg-sky-100", border: "border-sky-400",
+        options: [
+          { text: "Bakar semua hasil bumi", isCorrect: false },
+          { text: "Tunda ekspor hingga merdeka", isCorrect: false },
+          { text: "Gunakan Barisan Penyelundup ALRI", isCorrect: true, fact: "Berani! Angkatan Laut RI membentuk operasi penyelundupan menembus blokade malam hari dengan perahu cepat ke Malaya/Singapura." }
+        ]
+      },
+      {
+        id: 17, title: "KRISIS: EKSPLOITASI HARGA OLEH PEDAGANG NAKAL",
+        desc: "Di tengah perang gerilya, beberapa pedagang besar menahan pasokan pangan untuk menaikkan harga mencekik leher.",
+        icon: "fas fa-balance-scale", bg: "bg-slate-200", border: "border-slate-400",
+        options: [
+          { text: "Biarkan sebagai hukum alam", isCorrect: false },
+          { text: "Penetapan Harga Maksimum", isCorrect: true, fact: "Tepat! Pemerintah turun tangan langsung mematok Harga Maksimum agar rakyat kecil dan pejuang masih bisa membeli makanan." },
+          { text: "Penjarakan semua pedagang", isCorrect: false }
+        ]
+      },
+      {
+        id: 18, title: "KRISIS: PEMBIAYAAN PROGRAM JANGKA PANJANG",
+        desc: "Ekonomi masih terpuruk pasca perang kemerdekaan, dan peralihan ke sistem yang baru sangat sulit.",
+        icon: "fas fa-briefcase", bg: "bg-emerald-200", border: "border-emerald-500",
+        options: [
+          { text: "Pajak 100% untuk warga asing", isCorrect: false },
+          { text: "Susun Rencana Urgensi Perekonomian", isCorrect: true, fact: "Benar! Ini cikal bakal RUP (Sumitro Plan) yang merancang industrialisasi nasional pada akhir masa revolusi fisik." },
+          { text: "Mencetak uang kembali", isCorrect: false }
+        ]
+      },
+      {
+        id: 19, title: "KRISIS: SYARAT KEMERDEKAAN (KMB)",
+        desc: "Belanda mau mengakui kedaulatan RI di Konferensi Meja Bundar (1949), asalkan kita menanggung seluruh hutang Hindia Belanda!",
+        icon: "fas fa-file-alt", bg: "bg-gray-200", border: "border-gray-500",
+        options: [
+          { text: "Terima Syarat demi Kedaulatan", isCorrect: true, fact: "Pilihan pahit! RI terpaksa menanggung hutang 4,3 Miliar Gulden agar Belanda angkat kaki dari Indonesia. Kebebasan butuh pengorbanan finansial." },
+          { text: "Tolak dan perang abadi", isCorrect: false },
+          { text: "Minta PBB membayar hutangnya", isCorrect: false }
+        ]
+      },
+      {
+        id: 20, title: "KRISIS FINAL: ANCAMAN KELAPARAN MASSAL!",
+        desc: "Pertanian hancur total. Rakyat kelaparan. Ini ujian terakhir Saudara Menteri, wujudkan kedaulatan pangan!",
+        icon: "fas fa-seedling", bg: "bg-[#d2b48c]", border: "border-[#8b4513]",
+        isPuzzleTrigger: true, // Trigger mini-puzzle
+        options: [
+          { text: "Terapkan Kasimo Plan", isCorrect: true, isPuzzleBtn: true },
+          { text: "Impor Beras dari Belanda", isCorrect: false },
+          { text: "Turunkan Pajak Petani", isCorrect: false }
+        ]
+      }
+    ];
+
+    function App() {
+      // Global State
+      const [scene, setScene] = useState(1);
+      const [playerName, setPlayerName] = useState("");
+      const [playerSchool, setPlayerSchool] = useState("");
+      const [currentMissionIndex, setCurrentMissionIndex] = useState(0);
+      const [kas, setKas] = useState(0);
+      const [kepercayaan, setKepercayaan] = useState(50);
+      
+      // Game Feedback State
+      const [feedback, setFeedback] = useState(null); 
+      const [shake, setShake] = useState(false);
+      
+      // Level 20 Puzzle State
+      const [showPuzzle, setShowPuzzle] = useState(false);
+      const [puzzleSlots, setPuzzleSlots] = useState([]);
+
+      // Audio & Fullscreen State
+      const [isMuted, setIsMuted] = useState(true);
+      const [isFullscreen, setIsFullscreen] = useState(false);
+      const audioRef = useRef(null);
+      const containerRef = useRef(null);
+
+      useEffect(() => {
+        const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      }, []);
+
+      const toggleMusic = () => {
+        if (!audioRef.current) return;
+        if (isMuted) {
+          audioRef.current.play().catch(e => console.log(e));
+          setIsMuted(false);
+        } else {
+          audioRef.current.pause();
+          setIsMuted(true);
+        }
+      };
+
+      const toggleFullscreen = () => {
+        if (!document.fullscreenElement) {
+          containerRef.current.requestFullscreen().catch(err => console.log(err));
+        } else {
+          document.exitFullscreen();
+        }
+      };
+
+      const triggerShake = () => {
+        setShake(true);
+        setTimeout(() => setShake(false), 500);
+      };
+
+      const handleAnswer = (option) => {
+        if (option.isCorrect) {
+          // Jika tombol ini adalah trigger puzzle (Misi 20)
+          if (option.isPuzzleBtn) {
+            setShowPuzzle(true);
+            return;
+          }
+          
+          // Jika jawaban benar biasa
+          setFeedback({
+            status: 'correct',
+            text: 'KEBIJAKAN TEPAT!',
+            fact: option.fact
+          });
+          setKas(prev => Math.min(100, prev + 5));
+          setKepercayaan(prev => Math.min(100, prev + 3));
+
+        } else {
+          triggerShake();
+          setKas(prev => Math.max(0, prev - 5));
+          setKepercayaan(prev => Math.max(0, prev - 5));
+          setFeedback({
+            status: 'wrong',
+            text: 'KEBIJAKAN KELIRU!',
+            fact: 'Rakyat kecewa. Kas dan Kepercayaan Rakyat menurun!'
+          });
+          setTimeout(() => setFeedback(null), 2000);
+        }
+      };
+
+      const handleNextMission = () => {
+        setFeedback(null);
+        setShowPuzzle(false);
+        setPuzzleSlots([]);
+        if (currentMissionIndex < MISSIONS.length - 1) {
+          setCurrentMissionIndex(prev => prev + 1);
+        } else {
+          setScene(7); // Pergi ke Victory Screen
+        }
+      };
+
+      // Komponen UI Global
+      const GlobalUI = () => {
+        if (scene !== 6) return null; 
+        return (
+          <div className="absolute top-0 left-0 w-full p-4 flex justify-between items-center bg-stone-900 text-white shadow-md z-10">
+            <div className="flex items-center gap-4 text-xl font-bold">
+              <div className="flex items-center gap-2 bg-stone-800 p-2 rounded-lg border border-stone-600">
+                <Icon name="fas fa-wallet" size={32} className="text-yellow-400" />
+                <span>Kas Negara: {kas}%</span>
+              </div>
+              <div className="flex items-center gap-2 bg-stone-800 p-2 rounded-lg border border-stone-600">
+                <Icon name="fas fa-heart" size={32} className="text-red-400" />
+                <span>Kepercayaan Rakyat: {kepercayaan}%</span>
+              </div>
+            </div>
+            <div className="text-stone-400 font-mono text-sm uppercase">Misi {currentMissionIndex + 1} / 20</div>
+          </div>
+        );
+      };
+
+      // Komponen Feedback Popup
+      const FeedbackOverlay = () => {
+        if (!feedback || feedback.status === 'wrong') return null;
+        return (
+          <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 p-8 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-[#f4e4bc] border-4 border-stone-800 p-8 rounded-xl max-w-3xl w-full text-center shadow-2xl relative">
+              <Icon name="fas fa-check-circle" size={80} className="mx-auto text-green-600 mb-4" />
+              <h2 className="text-4xl font-bold text-stone-800 mb-4">{feedback.text}</h2>
+              <p className="text-2xl text-stone-700 mb-8 font-serif leading-relaxed">{feedback.fact}</p>
+              <button 
+                onClick={handleNextMission}
+                className="bg-green-700 hover:bg-green-600 text-white text-2xl font-bold py-4 px-12 rounded-lg shadow-lg border-b-4 border-green-900 active:border-b-0 active:translate-y-1 transition-all"
+              >
+                LANJUTKAN TUGAS
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // ================= RENDER SCENES ================= //
+      const renderMenu = () => (
+        <div 
+          className="h-full flex flex-col items-center justify-end pb-24 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('https://i.imgur.com/4ade3n2.png')" }}
+        >
+          <button 
+            onClick={() => setScene(2)}
+            className="bg-red-800 hover:bg-red-700 text-white text-2xl font-bold py-4 px-12 rounded-lg shadow-2xl border-b-4 border-red-950 active:border-b-0 active:translate-y-1 transition-all hover:scale-105"
+          >
+            MULAI TUGAS
+          </button>
+        </div>
+      );
+
+      const renderLogin = () => (
+        <div className="h-full flex items-center justify-end p-8 md:pr-24 relative bg-cover bg-center bg-no-repeat"
+             style={{ backgroundImage: "url('https://i.imgur.com/RLB64em.png')" }}>
+          <div className="absolute inset-0 bg-black/40"></div>
+          
+          <div className="max-w-sm w-full bg-[#f4eab7] rounded-xl overflow-hidden shadow-[0_0_50px_rgba(0,0,0,0.8)] border-8 border-stone-900 p-6 flex flex-col items-center relative z-10">
+             <div className="absolute top-0 left-0 w-full h-4 bg-red-800"></div>
+             <h2 className="text-2xl font-black text-stone-900 mb-2 uppercase text-center mt-2">Identitas Menteri</h2>
+             <p className="text-stone-600 mb-6 font-medium text-center text-xs">Silakan masukkan data diri Anda sebelum menerima tugas negara.</p>
+
+             <div className="w-full space-y-4 mb-6">
+               <div>
+                 <label className="block text-stone-800 font-bold mb-1 text-sm">Nama Lengkap</label>
+                 <div className="flex items-center bg-white border-4 border-stone-400 rounded-lg overflow-hidden focus-within:border-stone-800 transition-colors">
+                   <div className="p-2 bg-stone-200 border-r-4 border-stone-400 text-stone-600">
+                     <Icon name="fas fa-user" size={20}/>
+                   </div>
+                   <input 
+                     type="text" 
+                     value={playerName} 
+                     onChange={(e)=>setPlayerName(e.target.value)} 
+                     placeholder="Contoh: Budi Haryanto" 
+                     className="w-full p-2 text-base outline-none font-medium text-stone-800 bg-transparent" 
+                     autoComplete="off"
+                   />
+                 </div>
+               </div>
+               <div>
+                 <label className="block text-stone-800 font-bold mb-1 text-sm">Asal Sekolah</label>
+                 <div className="flex items-center bg-white border-4 border-stone-400 rounded-lg overflow-hidden focus-within:border-stone-800 transition-colors">
+                   <div className="p-2 bg-stone-200 border-r-4 border-stone-400 text-stone-600">
+                     <Icon name="fas fa-university" size={20}/>
+                   </div>
+                   <input 
+                     type="text" 
+                     value={playerSchool} 
+                     onChange={(e)=>setPlayerSchool(e.target.value)} 
+                     placeholder="Contoh: SMP Negeri 1" 
+                     className="w-full p-2 text-base outline-none font-medium text-stone-800 bg-transparent" 
+                     autoComplete="off"
+                   />
+                 </div>
+               </div>
+             </div>
+
+             <button
+               onClick={() => { if(playerName.trim() && playerSchool.trim()) setScene(4); }}
+               disabled={!playerName.trim() || !playerSchool.trim()}
+               className="w-full bg-red-800 disabled:bg-stone-400 disabled:border-stone-500 hover:bg-red-700 text-white text-lg font-bold py-3 rounded shadow-xl border-b-4 border-red-950 disabled:border-b-4 active:border-b-0 active:translate-y-1 transition-all disabled:cursor-not-allowed"
+             >
+               TERIMA TUGAS
+             </button>
+          </div>
+        </div>
+      );
+
+      const renderIntro = () => (
+        <div 
+          className="h-full bg-cover bg-center bg-no-repeat relative"
+          style={{ backgroundImage: "url('https://i.imgur.com/WkZsGI3.png')" }}
+        >
+          <button 
+            onClick={() => setScene(3)}
+            className="absolute bottom-10 right-10 bg-red-800 hover:bg-red-700 text-white text-2xl font-bold py-4 px-12 rounded-lg shadow-2xl border-b-4 border-red-950 active:border-b-0 active:translate-y-1 transition-all hover:scale-105 z-10"
+          >
+            MULAI
+          </button>
+        </div>
+      );
+
+      const renderReadinessCheck = () => (
+        <div className="h-full flex flex-col items-center justify-center p-8 relative bg-cover bg-center bg-no-repeat"
+             style={{ backgroundImage: "url('https://i.imgur.com/B8sLjtK.png')" }}>
+          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="max-w-2xl w-full bg-[#f4eab7] rounded-xl overflow-hidden shadow-[0_0_50px_rgba(220,38,38,0.3)] border-8 border-stone-900 p-8 text-center text-stone-900 relative z-10">
+            <Icon name="fas fa-shield-alt" size={80} className="mx-auto text-red-800 mb-4" />
+            <h2 className="text-3xl font-black mb-4 uppercase text-red-900">Panggilan Tugas, Menteri {playerName}!</h2>
+            <p className="text-lg font-medium mb-8 leading-relaxed font-serif text-stone-800 border-y-4 border-stone-400 py-4 px-2 bg-white/50 rounded-lg">
+              Republik muda ini sedang berada di ujung tanduk. Blokade penjajah, hiperinflasi, dan kekosongan kas negara benar-benar mengancam kedaulatan kita. <br/><br/>
+              Sebagai menteri dan perwakilan kebanggaan dari <strong className="text-red-800">{playerSchool}</strong>, apakah Anda sungguh-sungguh siap mengemban tanggung jawab maha berat ini demi menyelamatkan ekonomi bangsa?
+            </p>
+            <div className="flex gap-4 justify-center">
+              <button 
+                onClick={() => setScene(3)}
+                className="bg-stone-500 hover:bg-stone-600 text-white text-lg font-bold py-3 px-6 rounded shadow-lg border-b-4 border-stone-700 active:border-b-0 active:translate-y-1 transition-all"
+              >
+                KEMBALI
+              </button>
+              <button 
+                onClick={() => setScene(5)}
+                className="bg-red-800 hover:bg-red-700 text-white text-xl font-bold py-3 px-10 rounded shadow-xl border-b-4 border-red-950 active:border-b-0 active:translate-y-1 transition-all"
+              >
+                SAYA SIAP!
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderBriefing = () => (
+        <div className="h-full flex flex-col items-center justify-center p-8 relative bg-cover bg-center bg-no-repeat"
+             style={{ backgroundImage: "url('https://i.imgur.com/B8sLjtK.png')" }}>
+          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="max-w-4xl w-full bg-[#f4e4bc] rounded-xl overflow-hidden shadow-2xl border-4 border-stone-900 relative z-10">
+            <div className="bg-stone-900 text-white p-4 flex items-center gap-4">
+              <div className="bg-stone-700 rounded-full p-2"><Icon name="fas fa-user" size={40} /></div>
+              <div>
+                <h2 className="font-bold text-xl">Mohammad Hatta</h2>
+                <p className="text-stone-400 text-sm">Wakil Presiden Republik Indonesia</p>
+              </div>
+            </div>
+            <div className="p-8 text-3xl font-serif text-stone-800 leading-relaxed border-b-2 border-stone-300">
+              "Saudara Menteri <strong className="text-red-800">{playerName || ''}</strong>, perjalanan kita berat. Ada 20 krisis beruntun yang mengancam ekonomi republik muda ini mulai dari blokade hingga agresi militer. Nasib ekonomi bangsa ada di tangan Anda!"
+            </div>
+            <div className="p-8 flex justify-center bg-stone-200">
+              <button 
+                onClick={() => setScene(6)}
+                className="flex items-center gap-4 bg-amber-700 hover:bg-amber-600 text-white text-2xl font-bold py-4 px-8 rounded shadow-lg border-b-4 border-amber-900 active:border-b-0 active:translate-y-1 transition-all"
+              >
+                <Icon name="fas fa-file-alt" size={32} /> BUKA DOKUMEN KRISIS PERTAMA
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+
+      const renderGameplayLoop = () => {
+        const mission = MISSIONS[currentMissionIndex];
+
+        // Logika Puzzle khusus Kasimo Plan
+        const handlePuzzleClick = (item) => {
+          if (puzzleSlots.length < 3 && !puzzleSlots.includes(item)) {
+            const newSlots = [...puzzleSlots, item];
+            setPuzzleSlots(newSlots);
+            if (newSlots.length === 3) {
+              const correctOrder = ['bibit', 'hewan', 'transmigrasi'];
+              if (JSON.stringify(newSlots) === JSON.stringify(correctOrder)) {
+                 setFeedback({
+                   status: 'correct',
+                   text: 'SWASEMBADA BERHASIL!',
+                   fact: "Luar biasa! Kasimo Plan berhasil mengamankan pangan. Dengan ini, Anda telah menyelamatkan seluruh fondasi ekonomi kemerdekaan!"
+                 });
+                 setKas(100);
+                 setKepercayaan(100);
+              } else {
+                 triggerShake();
+                 setFeedback({ status: 'wrong', text: 'URUTAN SALAH!', fact: 'Coba lagi!' });
+                 setPuzzleSlots([]);
+                 setTimeout(() => setFeedback(null), 2000);
+              }
+            }
+          }
+        };
+
+        return (
+          <div className={`h-full pt-24 pb-8 px-8 flex flex-col relative bg-cover bg-center bg-no-repeat ${shake ? 'animate-shake' : ''} ${feedback?.status === 'wrong' ? 'border-8 border-red-500' : ''}`}
+               style={{ backgroundImage: "url('https://i.imgur.com/B8sLjtK.png')" }}>
+            <div className="absolute inset-0 bg-black/40"></div>
+            <div className="flex-1 flex flex-col gap-6 max-w-6xl mx-auto w-full relative z-10">
+              
+              {/* Main Visual Window */}
+              <div className={`${mission.bg} flex-1 rounded-2xl relative flex flex-col items-center justify-center overflow-hidden border-4 ${mission.border} shadow-inner p-8`}>
+                
+                {showPuzzle ? (
+                  // TAMPILAN MINI PUZZLE (MISI 20)
+                  <div className="w-full flex flex-col items-center z-10">
+                    <h2 className="text-3xl font-bold text-stone-800 mb-8 bg-white/70 px-6 py-2 rounded-full shadow">Susun 3 Langkah Kasimo Plan!</h2>
+                    <div className="flex gap-6 mb-12">
+                      {[0,1,2].map(index => (
+                        <div key={index} className="w-40 h-40 bg-white/50 border-4 border-dashed border-stone-800 rounded-xl flex items-center justify-center">
+                          {puzzleSlots[index] === 'bibit' && <div className="text-center"><Icon name="fas fa-seedling" size={64} className="mx-auto text-green-700"/> <p className="font-bold mt-2 text-black">Bibit Unggul</p></div>}
+                          {puzzleSlots[index] === 'hewan' && <div className="text-center"><Icon name="fas fa-cow" size={64} className="mx-auto text-orange-800"/> <p className="font-bold mt-2 text-black">Cegah Sembelih</p></div>}
+                          {puzzleSlots[index] === 'transmigrasi' && <div className="text-center"><Icon name="fas fa-users" size={64} className="mx-auto text-blue-800"/> <p className="font-bold mt-2 text-black">Transmigrasi</p></div>}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex gap-6">
+                       <button onClick={() => handlePuzzleClick('hewan')} disabled={puzzleSlots.includes('hewan')} className="bg-white p-4 rounded-xl border-4 border-stone-800 shadow flex flex-col items-center disabled:opacity-50 active:scale-95 text-black">
+                         <Icon name="fas fa-cow" size={48} className="text-orange-800 mb-2"/> <span className="font-bold">Cegah Sembelih</span>
+                       </button>
+                       <button onClick={() => handlePuzzleClick('transmigrasi')} disabled={puzzleSlots.includes('transmigrasi')} className="bg-white p-4 rounded-xl border-4 border-stone-800 shadow flex flex-col items-center disabled:opacity-50 active:scale-95 text-black">
+                         <Icon name="fas fa-users" size={48} className="text-blue-800 mb-2"/> <span className="font-bold">Transmigrasi</span>
+                       </button>
+                       <button onClick={() => handlePuzzleClick('bibit')} disabled={puzzleSlots.includes('bibit')} className="bg-white p-4 rounded-xl border-4 border-stone-800 shadow flex flex-col items-center disabled:opacity-50 active:scale-95 text-black">
+                         <Icon name="fas fa-seedling" size={48} className="text-green-700 mb-2"/> <span className="font-bold">Bibit Unggul</span>
+                       </button>
+                    </div>
+                    <button onClick={() => setPuzzleSlots([])} className="mt-8 text-stone-900 underline font-black text-xl">Reset Susunan</button>
+                  </div>
+                ) : (
+                  // TAMPILAN KRISIS NORMAL
+                  <>
+                    <Icon name={mission.icon} size={300} className="absolute opacity-20 text-stone-900" />
+                    <div className="bg-red-100 border-l-8 border-red-600 p-8 rounded-r-xl shadow-2xl max-w-3xl z-10 flex gap-6 items-start">
+                      <Icon name="fas fa-exclamation-triangle" className="text-red-600 shrink-0 mt-1" size={56} />
+                      <div>
+                        <h2 className="text-3xl font-black text-red-800 mb-2">{mission.title}</h2>
+                        <p className="text-xl text-red-900 leading-snug">{mission.desc}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Answer Cards */}
+              {!showPuzzle && (
+                <div className="h-48 grid grid-cols-3 gap-6">
+                  {mission.options.map((opt, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => handleAnswer(opt)} 
+                      className="bg-[#f0e6d2] border-4 border-stone-400 rounded-xl p-4 shadow-md hover:bg-stone-100 transition flex flex-col items-center justify-center gap-2 active:scale-95 text-stone-800"
+                    >
+                      <Icon name="fas fa-file-alt" size={40} className="text-stone-500" />
+                      <span className="text-xl font-bold text-center leading-tight">{opt.text}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <FeedbackOverlay />
+          </div>
+        );
+      };
+
+      const renderVictory = () => (
+        <div className="h-full flex flex-col items-center justify-center p-8 text-white relative overflow-hidden bg-cover bg-center bg-no-repeat"
+             style={{ backgroundImage: "url('https://i.imgur.com/B8sLjtK.png')" }}>
+          <div className="absolute inset-0 bg-black/40"></div>
+          <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-yellow-300 via-transparent to-transparent animate-pulse z-0"></div>
+          
+          <div className="max-w-5xl w-full bg-[#f4e4bc] text-stone-900 rounded-xl overflow-hidden shadow-2xl border-8 border-yellow-500 relative z-10 p-10 flex flex-col h-[90vh]">
+            <div className="text-center mb-6">
+              <Icon name="fas fa-check-circle" size={70} className="mx-auto text-green-600 mb-2" />
+              <h1 className="text-4xl font-black text-green-800 uppercase">20 Misi Berhasil Dilewati!</h1>
+              <h2 className="text-xl font-bold text-stone-700">Selamat, Menteri <strong className="text-red-800">{playerName}</strong> dari <strong className="text-red-800">{playerSchool}</strong>! Anda adalah pahlawan ekonomi Republik sejati.</h2>
+            </div>
+            
+            {/* Rangkuman Materi */}
+            <div className="bg-stone-100 p-6 rounded-lg text-left border-2 border-stone-300 flex-1 overflow-y-auto mb-6 grid grid-cols-2 gap-x-8 gap-y-4">
+              <div className="space-y-4">
+                <h3 className="font-black text-xl border-b-2 border-stone-300 pb-2">Stabilitas Moneter & Harga</h3>
+                <p className="text-sm font-medium"><strong className="text-green-700">ORI & ORIDA:</strong> Menciptakan identitas uang merdeka di pusat dan daerah.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Pinjaman Nasional:</strong> Mengisi kas negara berkat dukungan penuh rakyat.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">BNI 1946:</strong> Bank sentral pertama RI untuk sirkulasi uang.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Konferensi Ekonomi & Harga:</strong> Menyamakan persepsi dan menekan eksploitasi harga.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Nasionalisasi:</strong> Mengambil alih BPHM (aset Jepang) dan merintis nasionalisasi DJB.</p>
+              </div>
+              <div className="space-y-4">
+                <h3 className="font-black text-xl border-b-2 border-stone-300 pb-2">Menembus Blokade & Ketahanan</h3>
+                <p className="text-sm font-medium"><strong className="text-green-700">Diplomasi Beras:</strong> Bantuan ke India menembus blokade politis Belanda.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">BTC & INDOFF:</strong> Jaringan rahasia dan resmi untuk dagang di luar negeri (Singapura).</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Barisan Penyelundup:</strong> ALRI menjaga ekspor karet/gula demi dana revolusi.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Kasimo Plan & Sandang:</strong> Upaya swasembada pangan (bibit/hewan) dan kapas pakaian.</p>
+                <p className="text-sm font-medium"><strong className="text-green-700">Ekonomi PDRI:</strong> Mempertahankan roda negara di hutan saat Agresi Militer ke-2.</p>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => {
+                setScene(1); setCurrentMissionIndex(0); setKas(0); setKepercayaan(50); setPlayerName(""); setPlayerSchool("");
+              }}
+              className="bg-stone-800 hover:bg-stone-700 text-white text-xl font-bold py-4 rounded shadow-xl border-b-4 border-black active:border-b-0 active:translate-y-1 transition-all"
+            >
+              SELESAI & KEMBALI KE MENU
+            </button>
+          </div>
+        </div>
+      );
+
+      const renderProfile = () => (
+        <div 
+          className="h-full w-full bg-cover bg-center bg-no-repeat relative"
+          style={{ backgroundImage: "url('https://i.imgur.com/7P3ddCj.png')" }}
+        >
+        </div>
+      );
+
+      return (
+        <div ref={containerRef} className="w-full h-screen font-sans overflow-hidden relative">
+          
+          <audio ref={audioRef} src="https://github.com/indrawulan75-bit/musikgameperjuangansangmenteri/raw/refs/heads/main/df_wahyumusicproduction-the-winner-of-power-225966.mp3" loop />
+
+          {/* Tombol Kembali (Khusus Halaman 2, 3, & 8) */}
+          {(scene === 2 || scene === 3 || scene === 8) && (
+            <div className="absolute top-4 left-4 z-50 flex">
+              <button 
+                onClick={() => scene === 8 ? setScene(1) : setScene(scene - 1)} 
+                className="bg-stone-800 hover:bg-stone-700 text-white p-2 rounded-full shadow-md border-2 border-stone-500 transition-all active:scale-95" 
+                title="Kembali"
+              >
+                <Icon name="fas fa-arrow-left" size={16} />
+              </button>
+            </div>
+          )}
+
+          {/* Floating Controls */}
+          <div className="absolute top-4 right-4 z-50 flex gap-2">
+            {scene === 1 && (
+              <button onClick={() => setScene(8)} className="bg-stone-800 hover:bg-stone-700 text-white p-2 rounded-full shadow-md border-2 border-stone-500 transition-all active:scale-95" title="Profil Pengembang">
+                <Icon name="fas fa-user-tie" size={16} />
+              </button>
+            )}
+            <button onClick={toggleMusic} className="bg-stone-800 hover:bg-stone-700 text-white p-2 rounded-full shadow-md border-2 border-stone-500 transition-all active:scale-95" title={isMuted ? "Mainkan Musik" : "Matikan Musik"}>
+              <Icon name={isMuted ? "fas fa-volume-mute" : "fas fa-volume-up"} size={16} />
+            </button>
+            <button onClick={toggleFullscreen} className="bg-stone-800 hover:bg-stone-700 text-white p-2 rounded-full shadow-md border-2 border-stone-500 transition-all active:scale-95" title={isFullscreen ? "Keluar Fullscreen" : "Fullscreen"}>
+              <Icon name={isFullscreen ? "fas fa-compress" : "fas fa-expand"} size={16} />
+            </button>
+          </div>
+          
+          <div className="relative bg-stone-100 w-full h-full select-none overflow-hidden">
+            <GlobalUI />
+            {scene === 1 && renderMenu()}
+            {scene === 2 && renderIntro()}
+            {scene === 3 && renderLogin()}
+            {scene === 4 && renderReadinessCheck()}
+            {scene === 5 && renderBriefing()}
+            {scene === 6 && renderGameplayLoop()}
+            {scene === 7 && renderVictory()}
+            {scene === 8 && renderProfile()}
+          </div>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
